@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Cellular Automata</title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ramda/0.22.1/ramda.js"></script>
+	<style>
+		.cell {
+			width: 5px;
+			height: 5px;
+			border: 1px solid black;
+			display: inline-block;
+		}
+		.alive {
+			background-color: green;
+		}
+		.row {
+			margin-top: -11px;
+		}
+	</style>
+</head>
+<body>
+	<div style="text-align: center; margin-bottom: 10px;">
+		<span>Rule Number:</span>
+		<input type="number" id="rule" value="30">
+		<select id="starter">
+			<option value="random">Random</option>
+			<option value="point" selected>Point</option>
+		</select>
+	</div>
+	<div id="container" style="text-align: center;"></div>
+	<script>
+	/* eslint no-undef: 0*/
+
+	// editable constants
+	const NUM_CELLS = 200;
+	const REFRESH_RATE = 100; // Number of ms between draws
+
+
+	const rand = () => Math.round(Math.random());
+	let range = R.range(0, NUM_CELLS).map(rand);
+	const draw = arr => {
+		const row = document.createElement('div');
+		row.className = 'row';
+		arr.forEach(e => {
+			const cell = document.createElement('div');
+			const alive = e ? '' : 'alive';
+			cell.className = `cell ${alive}`;
+			row.appendChild(cell);
+		});
+		document.getElementById('container').appendChild(row);
+	};
+	let rule = 30;
+	const ruleBinary = () => ('00000000' + (rule).toString(2)).substr(('00000000' + (rule).toString(2)).length - 8);
+	const evolve = arr => {
+		return arr.map((e, i, a) => {
+			let key;
+			if (i == 0){
+				key = [R.last(a), e, a[i + 1]].join('');
+			} else if (i == arr.length - 1){
+				key = [a[i - 1], e, a[0]].join('');
+			} else {
+				key = [a[i - 1], e, a[i + 1]].join('');
+			}
+			return Math.abs(Number(ruleBinary()[parseInt(key, 2)]) - 1);
+		});
+	};
+	let count = 1;
+	setInterval(() => {
+		range = evolve(range);
+		draw(range);
+		// UNCOMMENT TO CYCLE THROUGH ALL OF THE RULES
+		// if (count++ % 200 == 0){
+		// 	document.getElementById('rule').value = Number(document.getElementById('rule').value) + 1;
+		// 	document.getElementById('rule').onchange();
+		// }
+	}, REFRESH_RATE);
+	const restart = () => {
+		rule = Number(document.getElementById('rule').value);
+		if (document.getElementById('starter').value == 'random'){
+			range = R.range(0, NUM_CELLS).map(rand);
+		} else {
+			range = R.range(0, NUM_CELLS).map(R.always(1));
+			range[Math.round(NUM_CELLS / 2)] = 0;
+		}
+		document.getElementById('container').innerHTML = '';
+		draw(range);
+	};
+	restart();
+	document.getElementById('rule').onchange = restart;
+	document.getElementById('starter').onchange = restart;
+
+	</script>
+</body>
+</html>
